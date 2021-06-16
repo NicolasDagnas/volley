@@ -107,6 +107,9 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     /** Whether the request should be retried in the event of an HTTP 5xx (server) error. */
     private boolean mShouldRetryServerErrors = false;
 
+    /** Whether the request should be retried in the event of a {@link NoConnectionError}. */
+    private boolean mShouldRetryConnectionErrors = false;
+
     /** The retry policy for this request. */
     private RetryPolicy mRetryPolicy;
 
@@ -132,8 +135,8 @@ public abstract class Request<T> implements Comparable<Request<T>> {
      * @deprecated Use {@link #Request(int, String, com.android.volley.Response.ErrorListener)}.
      */
     @Deprecated
-    public Request(String url, Response.ErrorListener listener) {
-        this(Method.DEPRECATED_GET_OR_POST, url, listener);
+    public Request(String url, Response.ErrorListener errorListener) {
+        this(Method.DEPRECATED_GET_OR_POST, url, errorListener);
     }
 
     /**
@@ -141,11 +144,15 @@ public abstract class Request<T> implements Comparable<Request<T>> {
      * error listener. Note that the normal response listener is not provided here as delivery of
      * responses is provided by subclasses, who have a better idea of how to deliver an
      * already-parsed response.
+     *
+     * @param method the HTTP method to use
+     * @param url URL to fetch the response from
+     * @param errorListener Error listener, or null to ignore errors.
      */
-    public Request(int method, String url, @Nullable Response.ErrorListener listener) {
+    public Request(int method, String url, @Nullable Response.ErrorListener errorListener) {
         mMethod = method;
         mUrl = url;
-        mErrorListener = listener;
+        mErrorListener = errorListener;
         setRetryPolicy(new DefaultRetryPolicy());
 
         mDefaultTrafficStatsTag = findDefaultTrafficStatsTag(url);
@@ -531,6 +538,25 @@ public abstract class Request<T> implements Comparable<Request<T>> {
      */
     public final boolean shouldRetryServerErrors() {
         return mShouldRetryServerErrors;
+    }
+
+    /**
+     * Sets whether or not the request should be retried in the event that no connection could be
+     * established.
+     *
+     * @return This Request object to allow for chaining.
+     */
+    public final Request<?> setShouldRetryConnectionErrors(boolean shouldRetryConnectionErrors) {
+        mShouldRetryConnectionErrors = shouldRetryConnectionErrors;
+        return this;
+    }
+
+    /**
+     * Returns true if this request should be retried in the event that no connection could be
+     * established.
+     */
+    public final boolean shouldRetryConnectionErrors() {
+        return mShouldRetryConnectionErrors;
     }
 
     /**
